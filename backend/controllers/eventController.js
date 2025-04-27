@@ -1,4 +1,5 @@
 const Event = require('../models/eventModel');
+const Registration = require('../models/registrationModel');
 const asyncHandler = require('express-async-handler');
 
 // @desc    Create a new event
@@ -48,7 +49,7 @@ const getEvents = asyncHandler(async (req, res) => {
   }
 
   const events = await Event.find(query)
-    .populate('organizer', 'name email')
+    .populate('organizer', 'username firstName lastName')
     .sort({ date: 1 });
 
   res.json(events);
@@ -59,8 +60,8 @@ const getEvents = asyncHandler(async (req, res) => {
 // @access  Public
 const getEventById = asyncHandler(async (req, res) => {
   const event = await Event.findById(req.params.id)
-    .populate('organizer', 'name email')
-    .populate('registeredUsers', 'name email');
+    .populate('organizer', 'username firstName lastName')
+    .populate('registeredUsers', 'username firstName lastName');
 
   if (!event) {
     res.status(404);
@@ -81,19 +82,16 @@ const updateEvent = asyncHandler(async (req, res) => {
     throw new Error('Event not found');
   }
 
-  // Check if user is the organizer
-  if (event.organizer.toString() !== req.user._id.toString()) {
-    res.status(401);
+  // Check if user is the organizer or an admin
+  if (event.organizer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    res.status(403);
     throw new Error('Not authorized to update this event');
   }
 
-  const updatedEvent = await Event.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true, runValidators: true }
-  );
+  Object.assign(event, req.body);
+  await event.save();
 
-  res.json(updatedEvent);
+  res.json(event);
 });
 
 // @desc    Delete event
@@ -107,14 +105,14 @@ const deleteEvent = asyncHandler(async (req, res) => {
     throw new Error('Event not found');
   }
 
-  // Check if user is the organizer
-  if (event.organizer.toString() !== req.user._id.toString()) {
-    res.status(401);
+  // Check if user is the organizer or an admin
+  if (event.organizer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    res.status(403);
     throw new Error('Not authorized to delete this event');
   }
 
   await event.remove();
-  res.json({ message: 'Event removed' });
+  res.json({ message: 'Event deleted successfully' });
 });
 
 // @desc    Register for event
@@ -129,21 +127,58 @@ const registerForEvent = asyncHandler(async (req, res) => {
   }
 
   // Check if event is full
-  if (event.registeredUsers.length >= event.capacity) {
+  if (event.isFull) {
     res.status(400);
-    throw new Error('Event is full');
+    throw new Error('Event is already full');
   }
 
   // Check if user is already registered
   if (event.registeredUsers.includes(req.user._id)) {
     res.status(400);
-    throw new Error('User already registered for this event');
+    throw new Error('Already registered for this event');
   }
 
-  event.registeredUsers.push(req.user._id);
-  await event.save();
+  // Create registration
+  const registration = new Registration({
+    event: event._id,
+    user: req.user._id
+  });
 
-  res.json({ message: 'Successfully registered for event' });
+  await registration.save();
+
+  // Add user to event's registered users
+  await event.registerUser(req.user._id);
+
+  res.json({ message: 'Successfully registered for event', registration });
+});
+
+// @desc    Unregister from event
+// @route   DELETE /api/events/:id/unregister
+// @access  Private
+const unregisterFromEvent = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id);
+
+  if (!event) {
+    res.status(404);
+    throw new Error('Event not found');
+  }
+
+  // Check if user is registered
+  if (!event.registeredUsers.includes(req.user._id)) {
+    res.status(400);
+    throw new Error('Not registered for this event');
+  }
+
+  // Update registration status
+  await Registration.findOneAndUpdate(
+    { event: event._id, user: req.user._id },
+    { status: 'cancelled' }
+  );
+
+  // Remove user from event's registered users
+  await event.unregisterUser(req.user._id);
+
+  res.json({ message: 'Successfully unregistered from event' });
 });
 
 module.exports = {
@@ -152,5 +187,6 @@ module.exports = {
   getEventById,
   updateEvent,
   deleteEvent,
-  registerForEvent
+  registerForEvent,
+  unregisterFromEvent
 }; 
