@@ -1,0 +1,108 @@
+/* Global Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar Styles */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Card Styles */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Button Styles */
+.btn {
+  border-radius: 5px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: #4361ee;
+  border-color: #4361ee;
+}
+
+.btn-primary:hover {
+  background-color: #3a56d4;
+  border-color: #3a56d4;
+  transform: translateY(-2px);
+}
+
+.btn-outline-primary {
+  color: #4361ee;
+  border-color: #4361ee;
+}
+
+.btn-outline-primary:hover {
+  background-color: #4361ee;
+  border-color: #4361ee;
+  transform: translateY(-2px);
+}
+
+/* Form Styles */
+.form-control {
+  border-radius: 5px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+  border-color: #4361ee;
+  box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+  padding: 5rem 0;
+  margin-bottom: 3rem;
+}
+
+/* Badge Styles */
+.badge {
+  padding: 0.5em 1em;
+  font-weight: 500;
+  border-radius: 30px;
+}
+
+/* Alert Styles */
+.alert {
+  border-radius: 10px;
+  border: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 0;
+  }
+  
+  .card-img-top {
+    height: 180px;
+  }
+}
